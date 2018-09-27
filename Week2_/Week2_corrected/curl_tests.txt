@@ -1,0 +1,37 @@
+For best representation of the program, execute in order:
+
+- get all members
+curl -i http://localhost:5000/members
+
+- get specific member
+curl -i http://localhost:5000/members/Elvin
+
+- get specific member if does not exist
+curl -i http://localhost:5000/members/Laura
+
+- create new member with mimetype application/json
+curl -i -H "Content-Type: application/json" -X POST -d '{"name":"Nils"}' http://localhost:5000/members
+
+- create new member with mimetype text/plain
+curl -i -H "Content-Type: text/plain" -X POST -d 'Sture' http://localhost:5000/members
+
+- create new member with mimetype other than application/json or text/plain but fail:
+curl -i -H "Content-Type: application/octet-stream" -X POST -d 'Terra' http://localhost:5000/members
+
+- then see updated list of tasks
+curl -i http://localhost:5000/members
+
+- update an existing task
+curl -u Valerie:Ong -i -H "Content-Type: application/json" -X PUT -d '{"age":12}' http://localhost:5000/members/Nick
+
+- try to update but fail without authentication
+curl -u -i -H "Content-Type: application/json" -X PUT -d '{"age":12, "occupation":"Student"}' http://localhost:5000/members/Sture
+
+- delete an existing task
+curl -u Valerie:Ong -i -H "Content-Type: application/json" -X DELETE http://localhost:5000/members/Chris
+
+- try to delete but fail without authentication
+curl -i -H "Content-Type: application/json" -X DELETE http://localhost:5000/members/Nick
+
+- then see updated list of tasks
+curl -i http://localhost:5000/members
