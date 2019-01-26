@@ -1,0 +1,75 @@
+Fore knowledge:
+Relays own their own public key/private key RSA keypair (their own onion key.)
+Diffie Helman Key exchange is a keypair. The public key can be sent out and shared freely.
+Anyone who takes the public key that was sent out can use their own diffie helman keypair to calculate a shared secret.
+This enables a shared secret to be established even with under constant surveillance from a third party, as long as he does not obtain
+either of the private keys.
+
+Circuit construction is achieved by sending a cell encrypted using the public key of the relay.
+Say you have the following members:
+Alice - A()
+Bob - B()
+Carol - C()
+Danny - D()
+Trudy - T()
+
+Alice wishes to connect to Trudy via the onion router, composed of the following relayers - Bob, Carol, Danny.
+Bob, Carol and Danny do not initially know of the existence of Trudy and Alice.
+Alice also has the public key of all 3 relayers, and knows of their IP addresses.
+
+
+Alice hence begins by generating diffie helman key pairs. (She generates three)
+Alice now takes the first key pair,and connects to Bob, alerting him of her existence.
+She also sends the first half of a diffie helman key exchange pair to him.
+This half of a key exchange was encrypted using Bob's public key, so no one can decrypt it enroute.
+Bob calculates this shared secret by using his half of the diffie helman key that he generates.
+He then sends back his half of the diffie helman key exchange, while also signing the cell he sends back using his private RSA key.
+
+Alice takes the cell, verifies the signature (after extracting it from the cell) and calculates her half of the shared secret.
+Using the shared secret to initiate an AES channel, Alice and Bob now have secure communications.
+
+
+
+To further extend the circuit, Alice will encrypt the second keypair using Carol's public key.
+She then sends this new cell through the secure AES channel, labelling its destination on the outside of the cell (although it is covered by AES in transit).
+Bob receives this, and decrypts the message using his shared AES secret. 
+He will not be able to understand the inner encrypted portion (the half of the diffie helman that Alice encrypted to Carol).
+He however will be able to see the outer label that states to forward it to Carol, making him aware of Carol being the next hop for this cell.
+Bob will proceed to extend the circuit by forwarding the key to the next relay, Carol.
+Carol, upon receiving the cell, will only be able to tell two things.
+1. She received the cell from Bob
+2. There is one half of a diffie helman key exchange here.
+3. It was encrypted using her public key.
+This is because of the lack of any of Alice's identity (she generated a completely new keypair to send to Carol) on the cell.
+Carol proceeds to verify it is a keypair, and sends her half of the exchange through Bob, while signing the cell.
+Bob will receive this and at most, be aware that Carol is sending her half of an exchange to Alice. But without Alice's private key, or Carol's private key,
+he cannot pose as Carol, and can only send it back. 
+(the worst he can do is not send it, but Alice will become aware of this and probably attempt another connection)
+
+Assuming Bob sends it back, Alice can now look at the cell, verify the signature, and calculate her half of the exchange for Carol.
+
+Afterwards, Alice will then send another cell to Carol, through Bob.
+Carol still only knows Bob is on the other end of the connection, but is unaware of Alice.
+Alice will first encrypt her last diffie helman key exchange with Danny's public key, mark it with Danny's Address,
+then encrypt it again with Carol's AES channel key, mark it with Carol's address, 
+and encrypt it one more time with Bob's AES channel key before sending it to Bob.
+
+Bob decrypts, and forwards it to Carol, unable to read more then the intended destination.
+Carol, unable to read the inside, only able to see the intended destination, sends the cell to Danny.
+Danny verifies his by signing the cell, calculates his half of the diffie helman exchange, and pushes a reply to Carol.
+Carol is able to see this, and encrypts the data with her AES channel key to Bob, and sends it to Bob.
+Bob will encrypt it again with the AES channel key he shares with Alice, and send it to Alice.
+
+Because of this, Carol is aware she is connecting to Danny, but is only aware that Bob requested she make a connection to Danny using the key exchange.
+Carol could see the unencrypted keypair Danny sent back, 
+but could not do maliciously edit it due to the lack of Danny's private key for the signature,
+and also could not maliciously edit it due to the lack of Alice's private keypair to obtain the shared secret.
+
+
+To summarize, now Alice can simply send cells over these shared secrets channels she established with each of them, through them, 
+and only Danny is able to see the final output.
+She does this by doing: B( C(D("Some GET request") +  Danny's Address) + Carol's Address)
+
+Bob is aware of Alice and Carol but does not know what is going through him
+Carol is aware that she is relaying from Bob to Danny but cannot see anything else.
+Danny is aware he is receiving GET requests from Carol, but is unaware of Bob or Alice. He is also able to see the final intended destination of the message.
