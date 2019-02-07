@@ -35,6 +35,7 @@ def sol1():
     challenge = conn.recvline()
     print(challenge)
     # decrypt the challenge here
+    challenge_str = challenge.decode('utf-8')
     freqDict ={}
     for i in challenge_str:
         if i in freqDict:
@@ -49,7 +50,7 @@ def sol1():
 
 
     # solution = int(0).to_bytes(7408, 'big')
-    conn.send(solution)
+    conn.send(solution_str)
     message = conn.recvline()
     message = conn.recvline()
     if b'Congratulations' in message:
